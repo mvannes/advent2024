@@ -48,11 +48,35 @@ func main() {
 }
 
 func isReportSafe(report Report) bool {
+	pass := levelsOk(report.levels)
+	if pass {
+		return true
+	}
+	
+	attemptedIndex := 0
+	for attemptedIndex < len(report.levels) {
+		var newLevels []int
+		for i := 0; i < len(report.levels); i++ {
+			if i == attemptedIndex {
+				continue
+			}
+			newLevels = append(newLevels, report.levels[i])
+		}
+
+		if levelsOk(newLevels) {
+			return true
+		}
+		attemptedIndex++
+	}
+	return false
+}
+
+func levelsOk(levels []int) bool {
 	descending := false
 	ascending := false
-	for i := 0; i < len(report.levels)-1; i++ {
-		curr := report.levels[i]
-		next := report.levels[i+1]
+	for i := 0; i < len(levels)-1; i++ {
+		curr := levels[i]
+		next := levels[i+1]
 
 		diff := curr - next
 		if diff < 0 {

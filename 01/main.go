@@ -4,10 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"log"
-	"math"
 	"os"
 	"regexp"
-	"sort"
 	"strconv"
 )
 
@@ -38,20 +36,21 @@ func main() {
 		rightLines = append(rightLines, right)
 	}
 
-	sort.Ints(leftLines)
-	sort.Ints(rightLines)
-
-	sum := 0
-	for i := 0; i < len(leftLines); i++ {
-		left := leftLines[i]
-		right := rightLines[i]
-
-		difference := int(math.Abs(float64(left - right)))
-
-		fmt.Println(left, right, difference)
-		sum += difference
+	rightLineOccurrences := map[int]int{}
+	for _, right := range rightLines {
+		if _, ok := rightLineOccurrences[right]; ok {
+			rightLineOccurrences[right]++
+		} else {
+			rightLineOccurrences[right] = 1
+		}
 	}
-	fmt.Println(sum)
+
+	similarityScore := 0
+	for _, left := range leftLines {
+		score := left * rightLineOccurrences[left]
+		similarityScore += score
+	}
+	fmt.Println(similarityScore)
 }
 
 func handleError(err error) {

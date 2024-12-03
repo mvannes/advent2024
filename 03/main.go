@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 func main() {
@@ -19,14 +20,27 @@ func main() {
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 
-	rxp := regexp.MustCompile("mul\\(([0-9]+),([0-9]+)\\)")
+	rxp := regexp.MustCompile("mul\\(([0-9]+),([0-9]+)\\)|(do\\(\\))|(don't\\(\\))")
 
 	var multiples [][]int
+
+	doing := true
 	for scanner.Scan() {
 		line := scanner.Text()
 		matches := rxp.FindAllStringSubmatch(line, -1)
 
 		for _, match := range matches {
+			switch {
+			case strings.HasPrefix(match[0], "don't"):
+				doing = false
+				continue
+			case strings.HasPrefix(match[0], "do"):
+				doing = true
+				continue
+			}
+			if !doing {
+				continue
+			}
 			left, err := strconv.Atoi(match[1])
 			handleError(err)
 			right, err := strconv.Atoi(match[2])

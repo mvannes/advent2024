@@ -41,69 +41,36 @@ func main() {
 		// same padding offset here.
 		for j := 4; j < len(lines[i])-4; j++ {
 			parsedChar := lines[i][j]
-			// we start parsing on finding an X.
-			if parsedChar != "X" {
+			// we start parsing on finding an A
+			if parsedChar != "A" {
 				continue
 			}
-			xmasCounter += xmasCount(lines, []int{i, j})
+			if isXmas(lines, []int{i, j}) {
+				xmasCounter++
+			}
 		}
 	}
 
 	fmt.Println(xmasCounter)
 }
 
-func xmasCount(lines [][]string, xLocation []int) int {
+func isXmas(lines [][]string, aLocation []int) bool {
+	y := aLocation[0]
+	x := aLocation[1]
 
-	y := xLocation[0]
-	x := xLocation[1]
+	a := lines[y][x]
+	leftUp := lines[y-1][x-1]
+	rightUp := lines[y-1][x+1]
+	leftDown := lines[y+1][x-1]
+	rightDown := lines[y+1][x+1]
 
-	forward := ""
-	backward := ""
-	up := ""
-	upLeft := ""
-	upRight := ""
-	down := ""
-	downLeft := ""
-	downRight := ""
-	for i := 0; i < 4; i++ {
-		forward += lines[y][x+i]
-		backward += lines[y][x-i]
-		up += lines[y-i][x]
-		upLeft += lines[y-i][x-i]
-		upRight += lines[y-i][x+i]
-		down += lines[y+i][x]
-		downLeft += lines[y+i][x-i]
-		downRight += lines[y+i][x+i]
-	}
+	diagonalTopToBot := leftUp + a + rightDown
+	diagonalBotToTop := leftDown + a + rightUp
 
-	counter := 0
-	if forward == "XMAS" {
-		counter++
-	}
+	hasMasTopToBot := diagonalTopToBot == "MAS" || diagonalTopToBot == "SAM"
+	hasMasBotToTop := diagonalBotToTop == "MAS" || diagonalBotToTop == "SAM"
 
-	if backward == "XMAS" {
-		counter++
-	}
-	if up == "XMAS" {
-		counter++
-	}
-	if upLeft == "XMAS" {
-		counter++
-	}
-	if upRight == "XMAS" {
-		counter++
-	}
-	if down == "XMAS" {
-		counter++
-	}
-	if downLeft == "XMAS" {
-		counter++
-	}
-	if downRight == "XMAS" {
-		counter++
-	}
-
-	return counter
+	return hasMasBotToTop && hasMasTopToBot
 }
 
 func handleError(err error) {

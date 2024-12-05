@@ -56,33 +56,40 @@ func main() {
 
 	middleNumberSum := 0
 	for _, update := range pageNumberUpdates {
-		sorted := sort.SliceIsSorted(update, func(i, j int) bool {
-			a := update[i]
-			b := update[j]
+		isSorted := sort.SliceIsSorted(update, sortFuncer(update, pageOrderings))
 
-			if afters, ok := pageOrderings[a]; ok {
-				for _, after := range afters {
-					if b == after {
-						return true
-					}
-				}
-			}
-			if afters, ok := pageOrderings[b]; ok {
-				for _, after := range afters {
-					if a == after {
-						return false
-					}
-				}
-			}
-			return false
-		})
-
-		if sorted {
-			fmt.Println(update, update[len(update)/2])
-			middleNumberSum += update[len(update)/2]
+		if isSorted {
+			continue
 		}
+
+		sort.SliceStable(update, sortFuncer(update, pageOrderings))
+		middleNumberSum += update[len(update)/2]
+
 	}
 	fmt.Println(middleNumberSum)
+}
+
+func sortFuncer(update []int, pageOrderings map[int][]int) func(i, j int) bool {
+	return func(i, j int) bool {
+		a := update[i]
+		b := update[j]
+
+		if afters, ok := pageOrderings[a]; ok {
+			for _, after := range afters {
+				if b == after {
+					return true
+				}
+			}
+		}
+		if afters, ok := pageOrderings[b]; ok {
+			for _, after := range afters {
+				if a == after {
+					return false
+				}
+			}
+		}
+		return false
+	}
 }
 
 func handleError(err error) {

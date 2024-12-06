@@ -19,7 +19,7 @@ func (l Location) y() int {
 }
 
 func (l Location) hash() string {
-	return fmt.Sprintf("%d-%d", l.x(), l.y())
+	return fmt.Sprintf("%d-%d", l.y(), l.x())
 }
 
 type Tile struct {
@@ -39,8 +39,9 @@ const (
 var empty interface{}
 
 type Guard struct {
-	Location  Location
-	Visited   map[string]interface{}
+	Location Location
+	// Could create a custom type that does not expose that this is a set, but can't be bothered.
+	Visited   map[string]Location
 	Direction Direction
 }
 
@@ -61,7 +62,8 @@ func (g *Guard) Look() Location {
 
 func (g *Guard) Move(loc Location) {
 	// Add our previous location to the visited list, we only mark it as such when we leave.
-	g.Visited[g.Location.hash()] = empty
+	// Include the direction, because we it will not be a duplicate if it is not involved.
+	g.Visited[fmt.Sprintf("%s-%d", loc.hash(), g.Direction)] = g.Location
 	g.Location = loc
 }
 
@@ -81,6 +83,11 @@ func (g *Guard) Turn() {
 	g.Direction = direction
 }
 
+func (g *Guard) HasVisited(location Location) bool {
+	_, hasVisited := g.Visited[fmt.Sprintf("%s-%d", location.hash(), g.Direction)]
+	return hasVisited
+}
+
 func main() {
 	// Open the file
 	file, err := os.Open("input.txt")
@@ -91,7 +98,7 @@ func main() {
 	grid := [][]Tile{}
 	guard := Guard{
 		Location:  nil,
-		Visited:   make(map[string]interface{}),
+		Visited:   make(map[string]Location),
 		Direction: UP,
 	}
 
@@ -119,15 +126,69 @@ func main() {
 		grid = append(grid, tilesInLine)
 	}
 
+	// Even in a struct, slices and maps in GO are pass by reference.
+	// So, make a copy for every time we want to iterate through.
+	startGuard := Guard{
+		Location:  guard.Location,
+		Visited:   map[string]Location{fmt.Sprintf("%s-%d", guard.Location.hash(), UP): guard.Location},
+		Direction: UP,
+	}
+	willLoop(grid, startGuard)
+	// We've used the startGuard to find the initial path our guard will take.
+	// Now, block each step in their path (because anything else will not affect their pathing anyway)
+	loopingCounter := 0
+	locationMap := map[string]interface{}{}
+	for _, location := range startGuard.Visited {
+		if _, ok := locationMap[location.hash()]; ok {
+			continue
+		}
+		locationMap[location.hash()] = empty
+
+		// Deep copy the grid, for similar slice reference logic
+		gridCopy := copyGrid(grid)
+		// block the current location
+		gridCopy[location.y()][location.x()].IsBlocked = true
+		attemptGuard := Guard{
+			Location:  guard.Location,
+			Visited:   map[string]Location{fmt.Sprintf("%s-%d", guard.Location.hash(), UP): guard.Location},
+			Direction: UP,
+		}
+
+		if willLoop(gridCopy, attemptGuard) {
+			loopingCounter++
+		}
+	}
+
+	fmt.Println(loopingCounter)
+}
+
+func copyGrid(grid [][]Tile) [][]Tile {
+	gridCopy := make([][]Tile, len(grid))
+	for i, tiles := range grid {
+		gridCopy[i] = make([]Tile, len(tiles))
+		for j, tile := range tiles {
+			gridCopy[i][j] = Tile{
+				Location:  Location{tile.Location.x(), tile.Location.y()},
+				IsBlocked: tile.IsBlocked,
+			}
+		}
+	}
+	return gridCopy
+}
+
+func willLoop(grid [][]Tile, guard Guard) bool {
 	gridHeight := len(grid)
 	gridWidth := len(grid[0])
 	// Infinite loop.
 	for {
 		nextLocation := guard.Look()
 		if isOutOfBounds(gridHeight, gridWidth, nextLocation) {
-			// Move on more time to ensure we have visited the current node, as we only
 			guard.Move(nextLocation)
-			break
+			return false
+		}
+
+		if guard.HasVisited(nextLocation) {
+			return true
 		}
 		nextTile := grid[nextLocation.y()][nextLocation.x()]
 		// If our next tile is blocked, turn the guard right.
@@ -138,8 +199,6 @@ func main() {
 
 		guard.Move(nextLocation)
 	}
-
-	fmt.Println(len(guard.Visited))
 }
 
 func isOutOfBounds(gridHeight, gridWidth int, location Location) bool {

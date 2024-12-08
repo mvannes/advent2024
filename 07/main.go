@@ -56,7 +56,9 @@ func main() {
 				mul := append([]string(nil), c...)
 				mul = append(mul, "*")
 
-				newCombinations = append(newCombinations, add, mul)
+				concat := append([]string(nil), c...)
+				concat = append(concat, "||")
+				newCombinations = append(newCombinations, add, mul, concat)
 			}
 			combinations = newCombinations
 		}
@@ -78,6 +80,7 @@ func main() {
 
 func isValidCombination(calibration Calibration, combination []string) bool {
 	total := calibration.Values[0]
+
 	for i, operator := range combination {
 		switch operator {
 		case "*":
@@ -85,6 +88,11 @@ func isValidCombination(calibration Calibration, combination []string) bool {
 			total *= calibration.Values[i+1]
 		case "+":
 			total += calibration.Values[i+1]
+		case "||":
+			totalAsStr := fmt.Sprintf("%d%d", total, calibration.Values[i+1])
+			newTotal, err := strconv.Atoi(totalAsStr)
+			handleError(err)
+			total = newTotal
 		}
 
 		// Early escape out of branches that cross over the boundary.

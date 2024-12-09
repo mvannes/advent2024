@@ -58,7 +58,11 @@ func main() {
 		lineNumber++
 	}
 
+	height := len(grid)
+	width := len(grid[0])
+
 	nodeLocations := []Location{}
+
 	for _, antennas := range antennasBySignal {
 		for i := 0; i < len(antennas); i++ {
 			a := antennas[i]
@@ -91,34 +95,41 @@ func main() {
 					goDown = false
 				}
 
-				var antiX int
-				if goRight {
-					antiX = a.Location.x + xDiff
-				} else {
-					antiX = a.Location.x - xDiff
-				}
+				location := a.Location
 
-				var antiY int
-				if goDown {
-					antiY = a.Location.y + yDiff
-				} else {
-					antiY = a.Location.y - yDiff
-				}
+				nodeLocations = append(nodeLocations, location)
+				for {
+					var antiX int
+					if goRight {
+						antiX = location.x + xDiff
+					} else {
+						antiX = location.x - xDiff
+					}
 
-				nodeLocations = append(nodeLocations, Location{
-					x: antiX,
-					y: antiY,
-				})
+					var antiY int
+					if goDown {
+						antiY = location.y + yDiff
+					} else {
+						antiY = location.y - yDiff
+					}
+
+					location = Location{
+						x: antiX,
+						y: antiY,
+					}
+
+					if isOutOfBounds(height, width, location) {
+						break
+					}
+					nodeLocations = append(nodeLocations, location)
+				}
 			}
 		}
 	}
 
 	uniqueLocations := 0
 	for _, location := range nodeLocations {
-		if location.y < 0 || location.y >= len(grid) {
-			continue
-		}
-		if location.x < 0 || location.x >= len(grid[0]) {
+		if isOutOfBounds(height, width, location) {
 			continue
 		}
 		if grid[location.y][location.x] == "#" {
@@ -132,6 +143,16 @@ func main() {
 	//for _, row := range grid {
 	//	fmt.Println(strings.Join(row, ""))
 	//}
+}
+
+func isOutOfBounds(height, width int, location Location) bool {
+	if location.y < 0 || location.y >= height {
+		return true
+	}
+	if location.x < 0 || location.x >= width {
+		return true
+	}
+	return false
 }
 
 func handleError(err error) {

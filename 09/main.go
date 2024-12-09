@@ -9,6 +9,12 @@ import (
 	"strings"
 )
 
+type File struct {
+	Id         int
+	StartIndex int
+	EndIndex   int
+}
+
 func main() {
 	// Open the file
 	file, err := os.Open("input.txt")
@@ -23,6 +29,7 @@ func main() {
 	isData := true
 
 	var data []int
+	var files []File
 	for _, dataSizeStr := range diskmap {
 		dataSize, err := strconv.Atoi(dataSizeStr)
 		handleError(err)
@@ -31,6 +38,11 @@ func main() {
 			for i := index; i < index+dataSize; i++ {
 				data = append(data, id)
 			}
+			files = append(files, File{
+				Id:         id,
+				StartIndex: index,
+				EndIndex:   index + dataSize,
+			})
 			id++
 		} else {
 			for i := index; i < index+dataSize; i++ {
@@ -43,43 +55,53 @@ func main() {
 		index += dataSize
 	}
 
-	fmt.Println(data)
-
-	dataIndex := len(data)
-	firstEmptyIndex := 0
-	for i := len(data) - 1; i > 0; i-- {
-		// if it is empty, we can continue
-		if data[i] == -10 {
-			continue
-		}
-		dataIndex = i
+	// Go backwards through the files
+	for i := len(files) - 1; i > 0; i-- {
+		firstEmptyIndex := 0
+		file := files[i]
+		spaceRequired := file.EndIndex - file.StartIndex
 		// We have to find what to swap.
-		foundEmpty := false
-		// Everything behind the data index must be empty.
-		for j := firstEmptyIndex; j < dataIndex; j++ {
-			// This time, if it is empty, set new firstEmpty.
-			if data[j] == -10 {
-				firstEmptyIndex = j
-				foundEmpty = true
+		foundEmptyLargeEnough := false
+		for j := firstEmptyIndex; j < len(data)-1; j++ {
+			if data[j] != -10 {
+				continue
+			}
+			firstEmptyIndex = j
+			spaceFound := true
+			// Look ahead for as much as we need, stopping if we find non empty space (it won't fit.
+			for s := 0; s < spaceRequired; s++ {
+				possibleIndex := firstEmptyIndex + s
+				if possibleIndex >= len(data)-1 || data[possibleIndex] != -10 {
+					// Set to skip the bits we checked, as those must all not fit, since the smallest
+					// does not ift.
+					j = firstEmptyIndex + s
+					spaceFound = false
+					break
+				}
+			}
+
+			// Break out if we found space.
+			if spaceFound {
+				foundEmptyLargeEnough = true
 				break
 			}
 		}
-		// We must be done, no empty index found at all.
-		if !foundEmpty {
-			break
+		// could not find empty space that is not behind our file.
+		if !foundEmptyLargeEnough || firstEmptyIndex >= file.StartIndex {
+			continue
 		}
 		// Swap them around
-		data[firstEmptyIndex] = data[dataIndex]
-		data[dataIndex] = -10
+		for s := 0; s < spaceRequired; s++ {
+			data[firstEmptyIndex+s] = data[file.StartIndex+s]
+			data[file.StartIndex+s] = -10
+		}
 	}
 
-	fmt.Println(data)
 	sum := 0
 	for i, val := range data {
 		if val == -10 {
 			continue
 		}
-
 		sum += (i * val)
 	}
 	fmt.Println(sum)

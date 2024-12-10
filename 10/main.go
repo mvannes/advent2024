@@ -83,18 +83,14 @@ func main() {
 
 	sumScore := 0
 	for _, trailHead := range trailHeads {
-		visited := map[Tile]interface{}{}
+
+		visitedList := []Tile{}
 		stack := Stack{
 			items: []Tile{grid[trailHead.Y][trailHead.X]},
 		}
 		for !stack.empty() {
 			item := stack.pop()
-			// Skip if visited
-			if _, ok := visited[item]; ok {
-				continue
-			}
-
-			visited[item] = empty
+			visitedList = append(visitedList, item)
 
 			for _, adjacent := range AdjacentTiles(grid, item) {
 				stack.add(adjacent)
@@ -102,7 +98,7 @@ func main() {
 		}
 		score := 0
 
-		for tile, _ := range visited {
+		for _, tile := range visitedList {
 			if tile.Value == 9 {
 				score++
 			}

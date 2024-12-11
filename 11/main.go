@@ -34,7 +34,7 @@ func main() {
 	stoneBlinkResultCache := map[string][]string{}
 
 	amountOfBlinks := 0
-	for amountOfBlinks < 25 {
+	for amountOfBlinks < 75 {
 		newStoneMap := map[string]int{}
 		for stoneStr, amountOfStones := range stoneMap {
 			var newStones []string
